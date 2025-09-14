@@ -4,34 +4,42 @@ metadata:
   name: aggregator-worker
   namespace: iot
 spec:
-  replicas: 2
-  selector: { matchLabels: { app: aggregator-worker } }
+  replicas: 1
+  selector:
+    matchLabels: { app: aggregator-worker }
   template:
-    metadata: { labels: { app: aggregator-worker } }
+    metadata:
+      labels: { app: aggregator-worker }
     spec:
       containers:
-        - name: aggregator
+        - name: worker
           image: liro/aggregator-worker:latest
           ports: 
             - {containerPort: 8000}  # Prometheus metrics port
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "kafka.kafka:9092"
             - name: MONGO_URL
               value: "mongodb://mongodb.default:27017"
+            - name: MONGO_DB
+              value: "iotdb"
             - name: TELEMETRY_TOPIC
               value: "telemetry.raw"
             - name: DLQ_TOPIC
               value: "telemetry.dlq"
             - name: MAX_RETRIES
               value: "3"
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "100m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
+            - name: RAW_TOPIC
+              value: "telemetry.raw"
+            - name: AGG_COLLECTION
+              value: "telemetry_minute"
           livenessProbe:
             httpGet: { path: /metrics, port: 8000 }
             initialDelaySeconds: 30
@@ -52,3 +60,23 @@ spec:
     - port: 8000
       targetPort: 8000
       name: metrics
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: aggregator-worker-hpa
+  namespace: iot
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: aggregator-worker
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50

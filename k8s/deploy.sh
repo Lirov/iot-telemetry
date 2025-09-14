@@ -33,6 +33,10 @@ kubectl apply -f dashboard-api.yaml
 echo "📊 Deploying ServiceMonitor for Prometheus..."
 kubectl apply -f servicemonitor.yaml || echo "⚠️  ServiceMonitor deployment failed (Prometheus Operator may not be installed)"
 
+# Deploy HPA
+echo "📈 Deploying Horizontal Pod Autoscalers..."
+kubectl apply -f hpa.yaml
+
 # Wait for deployments to be ready
 echo "⏳ Waiting for deployments to be ready..."
 kubectl wait --for=condition=available --timeout=300s deployment/ingestion-api -n iot
@@ -47,6 +51,7 @@ echo "📋 Deployment Status:"
 kubectl get pods -n iot
 kubectl get services -n iot
 kubectl get ingress -n iot
+kubectl get hpa -n iot
 
 echo ""
 echo "🌐 Access URLs (add to /etc/hosts if needed):"

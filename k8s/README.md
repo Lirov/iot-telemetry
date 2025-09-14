@@ -71,10 +71,18 @@ Each service has resource requests and limits:
 
 ### Scaling
 
-- **ingestion-api**: 2 replicas
-- **aggregator-worker**: 2 replicas
-- **alerts-worker**: 1 replica
-- **dashboard-api**: 2 replicas
+- **ingestion-api**: 2 replicas (HPA: 2-10 replicas, CPU 60%, Memory 70%)
+- **aggregator-worker**: 1 replica (HPA: 1-5 replicas, CPU 50%, Memory 70%)
+- **alerts-worker**: 1 replica (no HPA - single instance for consistency)
+- **dashboard-api**: 2 replicas (HPA: 2-8 replicas, CPU 50%, Memory 70%)
+
+### Horizontal Pod Autoscaler (HPA)
+
+The deployment includes HPA for automatic scaling based on resource utilization:
+
+- **CPU-based scaling**: Monitors CPU utilization and scales when thresholds are exceeded
+- **Memory-based scaling**: Monitors memory utilization for additional scaling triggers
+- **Scaling behavior**: Configurable scale-up and scale-down policies to prevent thrashing
 
 ## Monitoring
 
@@ -154,6 +162,18 @@ kubectl logs -f deployment/dashboard-api -n iot
 ```bash
 kubectl get services -n iot
 kubectl get ingress -n iot
+kubectl get hpa -n iot
+```
+
+### Check HPA Status
+```bash
+# View HPA status
+kubectl describe hpa aggregator-worker-hpa -n iot
+kubectl describe hpa ingestion-api-hpa -n iot
+kubectl describe hpa dashboard-api-hpa -n iot
+
+# View HPA events
+kubectl get events -n iot --sort-by='.lastTimestamp' | grep -i hpa
 ```
 
 ### Test Endpoints

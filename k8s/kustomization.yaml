@@ -11,6 +11,7 @@ resources:
   - alerts-worker.yaml
   - dashboard-api.yaml
   - servicemonitor.yaml
+  - hpa.yaml
 
 commonLabels:
   app.kubernetes.io/name: iot-telemetry
