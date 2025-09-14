@@ -24,26 +24,36 @@ services:
     volumes: [ "mongo_data:/data/db" ]
 
   ingestion-api:
-    build: ./ingestion-api
+    build:
+      context: .
+      dockerfile: ingestion-api/Dockerfile
     env_file: .env
     depends_on: [kafka, mongo]
-    ports: ["8001:8000"]
+    ports: ["8001:8000"]  # API and metrics on same port
 
   aggregator-worker:
-    build: ./aggregator-worker
+    build:
+      context: .
+      dockerfile: aggregator-worker/Dockerfile
     env_file: .env
     depends_on: [kafka, mongo]
+    ports: ["8003:8000"]  # Prometheus metrics port
 
   alerts-worker:
-    build: ./alerts-worker
+    build:
+      context: .
+      dockerfile: alerts-worker/Dockerfile
     env_file: .env
     depends_on: [kafka, mongo]
+    ports: ["8004:8000"]  # Prometheus metrics port
 
   dashboard-api:
-    build: ./dashboard-api
+    build:
+      context: .
+      dockerfile: dashboard-api/Dockerfile
     env_file: .env
     depends_on: [mongo]
-    ports: ["8002:8000"]
+    ports: ["8002:8000"]  # API and metrics on same port
 
 volumes:
   mongo_data:

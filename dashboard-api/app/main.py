@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from typing import List, Dict, Any
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from fastapi.responses import Response
 
 app = FastAPI(title="IoT Telemetry Dashboard API", version="1.0.0")
 
@@ -9,6 +11,11 @@ app = FastAPI(title="IoT Telemetry Dashboard API", version="1.0.0")
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://mongo:27017")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.iotdb
+
+# Prometheus metrics
+api_requests_total = Counter('api_requests_total', 'Total number of API requests', ['endpoint', 'method'])
+api_request_duration = Histogram('api_request_duration_seconds', 'Time spent processing API requests', ['endpoint'])
+mongo_query_errors = Counter('mongo_query_errors_total', 'Total number of MongoDB query errors')
 
 @app.on_event("startup")
 async def startup_db_client():
@@ -110,3 +117,8 @@ async def get_stats():
         "aggregated_records": aggregated_count,
         "alerts": alerts_count
     }
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint"""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
