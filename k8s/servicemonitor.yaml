@@ -1,0 +1,63 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: iot-telemetry-metrics
+  namespace: iot
+  labels:
+    app: iot-telemetry
+spec:
+  selector:
+    matchLabels:
+      app: ingestion-api
+  endpoints:
+    - port: "80"
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aggregator-worker-metrics
+  namespace: iot
+  labels:
+    app: iot-telemetry
+spec:
+  selector:
+    matchLabels:
+      app: aggregator-worker
+  endpoints:
+    - port: "metrics"
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: alerts-worker-metrics
+  namespace: iot
+  labels:
+    app: iot-telemetry
+spec:
+  selector:
+    matchLabels:
+      app: alerts-worker
+  endpoints:
+    - port: "metrics"
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dashboard-api-metrics
+  namespace: iot
+  labels:
+    app: iot-telemetry
+spec:
+  selector:
+    matchLabels:
+      app: dashboard-api
+  endpoints:
+    - port: "80"
+      path: /metrics
+      interval: 30s

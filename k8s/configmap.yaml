@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iot-telemetry-config
+  namespace: iot
+data:
+  # Kafka Configuration
+  KAFKA_BOOTSTRAP_SERVERS: "kafka.kafka:9092"
+  TELEMETRY_TOPIC: "telemetry.raw"
+  DLQ_TOPIC: "telemetry.dlq"
+  
+  # MongoDB Configuration
+  MONGO_URL: "mongodb://mongodb.default:27017"
+  MONGO_DB: "iotdb"
+  RAW_COLLECTION: "telemetry_raw"
+  
+  # Alert Thresholds
+  TEMP_MIN_THRESHOLD: "-10"
+  TEMP_MAX_THRESHOLD: "50"
+  HUMIDITY_MIN_THRESHOLD: "0"
+  HUMIDITY_MAX_THRESHOLD: "100"
+  
+  # Retry Configuration
+  MAX_RETRIES: "3"

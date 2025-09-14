@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard-api
+  namespace: iot
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: dashboard-api } }
+  template:
+    metadata: { labels: { app: dashboard-api } }
+    spec:
+      containers:
+        - name: dashboard
+          image: liro/dashboard-api:latest
+          ports: 
+            - {containerPort: 8000}
+          env:
+            - name: MONGO_URL
+              value: "mongodb://mongodb.default:27017"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet: { path: /, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /, port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard-api
+  namespace: iot
+spec:
+  selector: { app: dashboard-api }
+  ports:
+    - port: 80
+      targetPort: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard-api-ingress
+  namespace: iot
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: dashboard.iot.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dashboard-api
+                port:
+                  number: 80

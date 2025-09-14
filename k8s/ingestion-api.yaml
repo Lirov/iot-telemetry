@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingestion-api
+  namespace: iot
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: ingestion-api } }
+  template:
+    metadata: { labels: { app: ingestion-api } }
+    spec:
+      containers:
+        - name: ingestion
+          image: liro/ingestion-api:latest
+          ports: 
+            - {containerPort: 8000}
+          env:
+            - name: KAFKA_BOOTSTRAP
+              value: "kafka.kafka:9092"    # if you install Kafka via Helm in kafka ns
+            - name: MONGO_URI
+              value: "mongodb://mongodb.default:27017"
+            - name: MONGO_DB
+              value: "iotdb"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingestion-api
+  namespace: iot
+spec:
+  selector: { app: ingestion-api }
+  ports:
+    - port: 80
+      targetPort: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingestion-api-ingress
+  namespace: iot
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: api.iot.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ingestion-api
+                port:
+                  number: 80

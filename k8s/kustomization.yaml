@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: iot
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - ingestion-api.yaml
+  - aggregator-worker.yaml
+  - alerts-worker.yaml
+  - dashboard-api.yaml
+  - servicemonitor.yaml
+
+commonLabels:
+  app.kubernetes.io/name: iot-telemetry
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/component: microservice
+
+images:
+  - name: liro/ingestion-api
+    newTag: latest
+  - name: liro/aggregator-worker
+    newTag: latest
+  - name: liro/alerts-worker
+    newTag: latest
+  - name: liro/dashboard-api
+    newTag: latest

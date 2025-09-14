@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alerts-worker
+  namespace: iot
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: alerts-worker } }
+  template:
+    metadata: { labels: { app: alerts-worker } }
+    spec:
+      containers:
+        - name: alerts
+          image: liro/alerts-worker:latest
+          ports: 
+            - {containerPort: 8000}  # Prometheus metrics port
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka.kafka:9092"
+            - name: MONGO_URL
+              value: "mongodb://mongodb.default:27017"
+            - name: TELEMETRY_TOPIC
+              value: "telemetry.raw"
+            - name: TEMP_MIN_THRESHOLD
+              value: "-10"
+            - name: TEMP_MAX_THRESHOLD
+              value: "50"
+            - name: HUMIDITY_MIN_THRESHOLD
+              value: "0"
+            - name: HUMIDITY_MAX_THRESHOLD
+              value: "100"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet: { path: /metrics, port: 8000 }
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet: { path: /metrics, port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alerts-worker
+  namespace: iot
+spec:
+  selector: { app: alerts-worker }
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: metrics
